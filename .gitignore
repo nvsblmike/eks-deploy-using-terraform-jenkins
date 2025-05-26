@@ -60,8 +60,10 @@ terraform.tfstate.backup
 crash.log
 
 # Ignore Terraform variable files that may contain secrets
-*.tfvars
+# *.tfvars
 *.tfvars.json
+
+Jenkinsfile
 
 node_modules
 
