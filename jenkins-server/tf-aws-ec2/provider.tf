@@ -12,9 +12,9 @@ provider "aws" {
   region = var.aws_region
   default_tags {
     tags = {
-      Environment   = "Production"
+      Environment   = "Development"
       Terraform     = "true"
-      Project       = "CI/CD Pipeline"
+      Project       = "EKS App Deployment"
       CostCenter    = "DevOps"
     }
   }

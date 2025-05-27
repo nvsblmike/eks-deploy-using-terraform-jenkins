@@ -1,15 +1,14 @@
 #!/bin/bash
 
 # Ref - https://www.jenkins.io/doc/book/installing/linux/
-# Installing jenkins
-sudo yum install wget -y
-sudo wget -O /etc/yum.repos.d/jenkins.repo \
-    https://pkg.jenkins.io/redhat/jenkins.repo
-sudo rpm --import https://pkg.jenkins.io/redhat/jenkins.io-2023.key
-sudo yum upgrade -y
-# Add required dependencies for the jenkins package
-sudo yum install java-17-amazon-corretto-devel -y
-sudo yum install jenkins -y
+# Installing Jenkins
+sudo apt update -y
+sudo apt install wget -y
+wget -O /usr/share/keyrings/jenkins-keyring.asc https://pkg.jenkins.io/debian/jenkins.io-2023.key
+echo "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian binary/" | sudo tee /etc/apt/sources.list.d/jenkins.list > /dev/null
+sudo apt update -y
+sudo apt install openjdk-17-jdk -y
+sudo apt install jenkins -y
 sudo systemctl daemon-reload
 
 # Starting Jenkins
@@ -18,20 +17,18 @@ sudo systemctl start jenkins
 sudo systemctl status jenkins
 
 # Ref - https://www.atlassian.com/git/tutorials/install-git
-# Installing git
-sudo yum install -y git
+# Installing Git
+sudo apt install -y git
 git --version
 
 # Installing Docker 
-# Ref - https://www.cyberciti.biz/faq/how-to-install-docker-on-amazon-linux-2/
-sudo yum update
-sudo yum install docker -y
+# Ref - https://www.cyberciti.biz/faq/how-to-install-docker-on-ubuntu/
+sudo apt update
+sudo apt install -y docker.io
 
-sudo usermod -a -G docker ec2-user
+# Add user to Docker group
+sudo usermod -aG docker $USER
 sudo usermod -aG docker jenkins
-
-# Add group membership for the default ec2-user so you can run all docker commands without using the sudo command:
-id ec2-user
 newgrp docker
 
 sudo systemctl enable docker.service
@@ -41,7 +38,7 @@ sudo systemctl status docker.service
 sudo chmod 777 /var/run/docker.sock
 
 # Run Docker Container of Sonarqube
-docker run -d  --name sonar -p 9000:9000 sonarqube:lts-community
+docker run -d --name sonar -p 9000:9000 sonarqube:lts-community
 
 # Installing AWS CLI
 curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
@@ -49,34 +46,40 @@ sudo apt install unzip -y
 unzip awscliv2.zip
 sudo ./aws/install
 
-# Ref - https://developer.hashicorp.com/terraform/cli/install/yum
-# Installing terraform
-sudo yum install -y yum-utils
-sudo yum-config-manager --add-repo https://rpm.releases.hashicorp.com/AmazonLinux/hashicorp.repo
-sudo yum -y install terraform
+# Ref - https://developer.hashicorp.com/terraform/cli/install/apt
+# Installing Terraform
+# 1. Update and install dependencies
+sudo apt update -y
+sudo apt install -y gnupg software-properties-common curl
 
-# Ref - https://pwittrock.github.io/docs/tasks/tools/install-kubectl/
+# 2. Add the HashiCorp GPG key
+curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+
+# 3. Add the official HashiCorp Linux repository
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | \
+sudo tee /etc/apt/sources.list.d/hashicorp.list
+
+# 4. Update and install Terraform
+sudo apt update -y
+sudo apt install -y terraform
+
+# 5. Verify installation
+terraform -version
+
+# Ref - https://kubernetes.io/docs/tasks/tools/install-kubectl/
 # Installing kubectl
-sudo curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.23.6/bin/linux/amd64/kubectl
+sudo curl -LO "https://dl.k8s.io/release/v1.23.6/bin/linux/amd64/kubectl"
 sudo chmod +x ./kubectl
-sudo mkdir -p $HOME/bin && sudo cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
+sudo mv ./kubectl /usr/local/bin/kubectl
 
 # Installing Trivy
 # Ref - https://aquasecurity.github.io/trivy-repo/
-sudo tee /etc/yum.repos.d/trivy.repo << 'EOF'
-[trivy]
-name=Trivy repository
-baseurl=https://aquasecurity.github.io/trivy-repo/rpm/releases/$basearch/
-gpgcheck=1
-enabled=1
-gpgkey=https://aquasecurity.github.io/trivy-repo/rpm/public.key
-EOF
+sudo apt install -y apt-transport-https gnupg lsb-release
+wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -cs) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+sudo apt update -y
+sudo apt install -y trivy
 
-sudo yum -y update
-sudo yum -y install trivy
-
-# Intalling Helm
+# Installing Helm
 # Ref - https://helm.sh/docs/intro/install/
-curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
-chmod 700 get_helm.sh
-./get_helm.sh
+curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash

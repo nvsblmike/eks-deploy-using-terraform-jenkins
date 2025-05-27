@@ -17,7 +17,7 @@ module "vpc" {
   tags = {
     Name        = var.vpc_name
     Terraform   = "true"
-    Environment = "dev"
+    Environment = "Development"
   }
 
   public_subnet_tags = {
@@ -109,7 +109,7 @@ module "ec2_instance" {
   name = var.jenkins_ec2_instance
 
   instance_type               = var.instance_type
-  ami                         = "ami-0e8a34246278c21e4"
+  ami                         = data.aws_ami.ubuntu.id
   key_name                    = aws_key_pair.generated_key.key_name
   monitoring                  = true
   vpc_security_group_ids      = [module.sg.security_group_id]
@@ -121,6 +121,6 @@ module "ec2_instance" {
   tags = {
     Name        = "Jenkins-Server"
     Terraform   = "true"
-    Environment = "dev"
+    Environment = "Development"
   }
 }
